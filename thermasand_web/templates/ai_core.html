@@ -1,0 +1,1066 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    /* ── Dark Industrial Theme ──────────────────────────────────── */
+    body { background: #0d1117 !important; }
+    .ai-core-wrapper + footer,
+    footer.bg-light { background: #161b22 !important; border-top: 1px solid #30363d; }
+    footer.bg-light small { color: #8b949e !important; }
+
+    :root {
+        --core-bg: #0d1117;
+        --card-bg: #161b22;
+        --card-border: #30363d;
+        --text-1: #e6edf3;
+        --text-2: #8b949e;
+        --charge: #f59e0b;
+        --discharge: #3b82f6;
+        --storage: #10b981;
+        --danger: #ef4444;
+        --warning: #eab308;
+        --success: #22c55e;
+        --solar: #fbbf24;
+        --wind: #06b6d4;
+    }
+
+    .ai-core-wrapper {
+        color: var(--text-1);
+        padding: 0 0 40px 0;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        min-height: 100vh;
+    }
+
+    /* ── Header ─────────────────────────────────────────────────── */
+    .core-header {
+        background: linear-gradient(135deg, #161b22 0%, #0d1117 100%);
+        border-bottom: 1px solid var(--card-border);
+        padding: 20px 0;
+        margin-bottom: 24px;
+    }
+    .core-header h2 { margin: 0; font-weight: 700; letter-spacing: -0.5px; }
+    .core-header h2 span { color: var(--charge); }
+    .core-header .subtitle { color: var(--text-2); font-size: 0.85rem; margin: 4px 0 0 0; }
+    .header-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    .badge-live { background: rgba(34,197,94,0.15); color: var(--success); border: 1px solid rgba(34,197,94,0.3); }
+    .badge-morocco { background: rgba(239,68,68,0.1); color: #fb923c; border: 1px solid rgba(251,146,60,0.3); }
+
+    /* ── KPI Cards ──────────────────────────────────────────────── */
+    .kpi-row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; margin-bottom: 16px; }
+    @media (max-width: 1200px) { .kpi-row { grid-template-columns: repeat(3, 1fr); } }
+    @media (max-width: 768px) { .kpi-row { grid-template-columns: repeat(2, 1fr); } }
+
+    .kpi-card {
+        background: var(--card-bg);
+        border: 1px solid var(--card-border);
+        border-radius: 10px;
+        padding: 14px 16px;
+        text-align: center;
+        transition: border-color 0.3s, box-shadow 0.3s;
+        position: relative;
+        overflow: hidden;
+    }
+    .kpi-card::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 3px;
+        background: var(--card-border);
+        transition: background 0.3s;
+    }
+    .kpi-card.status-charge::before { background: var(--charge); }
+    .kpi-card.status-discharge::before { background: var(--discharge); }
+    .kpi-card.status-storage::before { background: var(--storage); }
+    .kpi-card.status-peak::before { background: var(--danger); }
+    .kpi-card.status-offpeak::before { background: var(--success); }
+    .kpi-card.status-high::before { background: var(--solar); }
+    .kpi-card.status-low::before { background: var(--text-2); }
+    .kpi-card.status-normal::before { background: var(--success); }
+    .kpi-card.status-warning::before { background: var(--warning); }
+    .kpi-card.status-critical::before { background: var(--danger); }
+
+    .kpi-label {
+        color: var(--text-2);
+        font-size: 0.65rem;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        margin-bottom: 6px;
+    }
+    .kpi-value {
+        font-size: 1.35rem;
+        font-weight: 700;
+        font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+        transition: color 0.3s;
+    }
+    .kpi-value.charge { color: var(--charge); }
+    .kpi-value.discharge { color: var(--discharge); }
+    .kpi-value.storage { color: var(--storage); }
+    .kpi-value.peak { color: var(--danger); }
+    .kpi-value.offpeak { color: var(--success); }
+    .kpi-value.high { color: var(--solar); }
+    .kpi-value.low { color: var(--text-2); }
+    .kpi-value.normal { color: var(--success); }
+    .kpi-value.warning { color: var(--warning); }
+    .kpi-value.critical { color: var(--danger); }
+    .kpi-sub { color: var(--text-2); font-size: 0.7rem; margin-top: 2px; }
+
+    /* ── Recommendation Banner ──────────────────────────────────── */
+    .rec-banner {
+        border-radius: 10px;
+        padding: 14px 20px;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        transition: all 0.4s;
+        border: 1px solid var(--card-border);
+        background: var(--card-bg);
+    }
+    .rec-banner.rec-charge {
+        border-color: rgba(245,158,11,0.4);
+        background: linear-gradient(135deg, rgba(245,158,11,0.08), transparent);
+        border-left: 4px solid var(--charge);
+    }
+    .rec-banner.rec-discharge {
+        border-color: rgba(59,130,246,0.4);
+        background: linear-gradient(135deg, rgba(59,130,246,0.08), transparent);
+        border-left: 4px solid var(--discharge);
+    }
+    .rec-banner.rec-critical {
+        border-color: rgba(239,68,68,0.4);
+        background: linear-gradient(135deg, rgba(239,68,68,0.08), transparent);
+        border-left: 4px solid var(--danger);
+        animation: pulse-border 2s infinite;
+    }
+    .rec-banner.rec-storage {
+        border-color: rgba(16,185,129,0.4);
+        background: linear-gradient(135deg, rgba(16,185,129,0.08), transparent);
+        border-left: 4px solid var(--storage);
+    }
+    .rec-icon { font-size: 1.4rem; flex-shrink: 0; }
+    .rec-label { color: var(--text-2); font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1px; }
+    .rec-text { font-family: 'Consolas', monospace; font-size: 0.85rem; }
+
+    @keyframes pulse-border {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); }
+        50% { box-shadow: 0 0 15px 0 rgba(239,68,68,0.15); }
+    }
+
+    /* ── Dark Cards ─────────────────────────────────────────────── */
+    .dark-card {
+        background: var(--card-bg);
+        border: 1px solid var(--card-border);
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    .dark-card-header {
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--card-border);
+        color: var(--text-2);
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    .dark-card-body { padding: 16px; }
+
+    /* ── SVG Gauge ──────────────────────────────────────────────── */
+    .gauge-container { text-align: center; padding: 10px 0; }
+    .gauge-svg { max-width: 320px; width: 100%; height: auto; }
+    .gauge-value { fill: var(--text-1); font-size: 42px; font-weight: 700; font-family: 'Consolas', monospace; }
+    .gauge-unit { fill: var(--text-2); font-size: 16px; }
+    .gauge-status { font-size: 13px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; }
+    .gauge-scale { fill: var(--text-2); font-size: 11px; }
+
+    /* ── Controls ───────────────────────────────────────────────── */
+    .control-label {
+        color: var(--text-2);
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 4px;
+        display: block;
+    }
+    .dark-input {
+        background: #0d1117;
+        border: 1px solid var(--card-border);
+        color: var(--text-1);
+        border-radius: 6px;
+        padding: 8px 12px;
+        width: 100%;
+        font-family: 'Consolas', monospace;
+        font-size: 0.9rem;
+    }
+    .dark-input:focus { outline: none; border-color: var(--charge); box-shadow: 0 0 0 2px rgba(245,158,11,0.15); }
+    .dark-select {
+        background: #0d1117;
+        border: 1px solid var(--card-border);
+        color: var(--text-1);
+        border-radius: 6px;
+        padding: 8px 12px;
+        width: 100%;
+        font-size: 0.85rem;
+    }
+    .dark-range {
+        width: 100%;
+        accent-color: var(--charge);
+    }
+    .btn-sim {
+        border: 1px solid var(--card-border);
+        background: var(--card-bg);
+        color: var(--text-1);
+        border-radius: 6px;
+        padding: 8px 16px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        width: 100%;
+    }
+    .btn-sim:hover { border-color: var(--charge); color: var(--charge); }
+    .btn-sim.active { background: var(--charge); color: #000; border-color: var(--charge); }
+    .btn-sim.btn-stop { border-color: var(--danger); color: var(--danger); }
+    .btn-sim.btn-stop:hover { background: var(--danger); color: #fff; }
+    .btn-sim.btn-reset { border-color: var(--text-2); color: var(--text-2); }
+
+    .temp-display {
+        font-family: 'Consolas', monospace;
+        font-size: 0.9rem;
+        color: var(--charge);
+        text-align: right;
+        margin-top: 2px;
+    }
+
+    /* ── JSON Output ────────────────────────────────────────────── */
+    .json-output {
+        background: #0d1117;
+        border: 1px solid var(--card-border);
+        border-radius: 8px;
+        padding: 16px;
+        font-family: 'Consolas', 'Monaco', monospace;
+        font-size: 0.82rem;
+        line-height: 1.6;
+        overflow-x: auto;
+        white-space: pre;
+        color: var(--text-1);
+    }
+    .json-key { color: #7ee787; }
+    .json-string { color: #a5d6ff; }
+    .json-number { color: #f2cc60; }
+    .json-bool { color: #ff7b72; }
+
+    /* ── Carbon Badge ───────────────────────────────────────────── */
+    .carbon-indicator {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 14px;
+        border-radius: 8px;
+        background: rgba(16,185,129,0.06);
+        border: 1px solid rgba(16,185,129,0.2);
+        margin-top: 12px;
+    }
+    .carbon-indicator.carbon-high {
+        background: rgba(239,68,68,0.06);
+        border-color: rgba(239,68,68,0.2);
+    }
+    .carbon-indicator.carbon-medium {
+        background: rgba(234,179,8,0.06);
+        border-color: rgba(234,179,8,0.2);
+    }
+    .carbon-dot {
+        width: 10px; height: 10px; border-radius: 50%;
+        background: var(--success);
+        flex-shrink: 0;
+    }
+    .carbon-high .carbon-dot { background: var(--danger); }
+    .carbon-medium .carbon-dot { background: var(--warning); }
+    .carbon-label { font-size: 0.7rem; color: var(--text-2); text-transform: uppercase; letter-spacing: 1px; }
+    .carbon-value { font-weight: 700; font-size: 0.85rem; }
+
+    /* ── Simulation Status Dot ──────────────────────────────────── */
+    .sim-dot {
+        display: inline-block;
+        width: 8px; height: 8px;
+        border-radius: 50%;
+        background: var(--text-2);
+        margin-right: 6px;
+    }
+    .sim-dot.running { background: var(--success); animation: blink 1s infinite; }
+    @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+</style>
+
+<div class="ai-core-wrapper">
+    <!-- ── Header ───────────────────────────────────────────────── -->
+    <div class="core-header">
+        <div class="container">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div>
+                    <h2>ThermaSand <span>Intelligent Core</span></h2>
+                    <p class="subtitle">M-TES Controller &middot; Morocco ONEE Grid &middot; MAX6675 Thermocouple (0-1024&deg;C)</p>
+                </div>
+                <div class="d-flex gap-2 align-items-center">
+                    <span class="header-badge badge-morocco">Morocco</span>
+                    <span class="header-badge badge-live" id="simBadge">STANDBY</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- ── KPI Row ──────────────────────────────────────────── -->
+        <div class="kpi-row">
+            <div class="kpi-card" id="kpiStatusCard">
+                <div class="kpi-label">System Status</div>
+                <div class="kpi-value" id="kpiStatus">IDLE</div>
+                <div class="kpi-sub">State Inference</div>
+            </div>
+            <div class="kpi-card" id="kpiTempCard">
+                <div class="kpi-label">Temperature</div>
+                <div class="kpi-value" id="kpiTemp">25.0&deg;C</div>
+                <div class="kpi-sub">MAX6675 Reading</div>
+            </div>
+            <div class="kpi-card" id="kpiEnergyCard">
+                <div class="kpi-label">Energy Stored</div>
+                <div class="kpi-value" id="kpiEnergy">0.00 kJ</div>
+                <div class="kpi-sub">Q = m&middot;Cp&middot;&Delta;T</div>
+            </div>
+            <div class="kpi-card" id="kpiGridCard">
+                <div class="kpi-label">Grid Price</div>
+                <div class="kpi-value" id="kpiGrid">OFF-PEAK</div>
+                <div class="kpi-sub">ONEE Tariff</div>
+            </div>
+            <div class="kpi-card" id="kpiRenewCard">
+                <div class="kpi-label">Renewable</div>
+                <div class="kpi-value" id="kpiRenew">LOW</div>
+                <div class="kpi-sub">Solar + Wind</div>
+            </div>
+            <div class="kpi-card" id="kpiSafetyCard">
+                <div class="kpi-label">Safety</div>
+                <div class="kpi-value normal" id="kpiSafety">NORMAL</div>
+                <div class="kpi-sub">Alert Level</div>
+            </div>
+        </div>
+
+        <!-- ── AI Recommendation Banner ─────────────────────────── -->
+        <div class="rec-banner" id="recBanner">
+            <div>
+                <div class="rec-label">AI Recommendation</div>
+                <div class="rec-text" id="recText">Set time and temperature, then run the simulation.</div>
+            </div>
+        </div>
+
+        <!-- ── Main Content ─────────────────────────────────────── -->
+        <div class="row g-3 mb-3">
+            <!-- Left: Controls -->
+            <div class="col-lg-3">
+                <div class="dark-card h-100">
+                    <div class="dark-card-header">Simulation Controls</div>
+                    <div class="dark-card-body">
+                        <div class="mb-3">
+                            <label class="control-label">Current Time</label>
+                            <input type="time" id="timeInput" class="dark-input" value="08:00" step="60">
+                        </div>
+                        <div class="mb-3">
+                            <label class="control-label">Temperature (&deg;C)</label>
+                            <input type="range" id="tempSlider" class="dark-range" min="25" max="800" value="25" step="0.5">
+                            <div class="d-flex justify-content-between">
+                                <input type="number" id="tempInput" class="dark-input" style="width:90px" value="25" min="25" max="800" step="0.5">
+                                <span class="temp-display" id="tempDisplay">25.0&deg;C</span>
+                            </div>
+                        </div>
+
+                        <hr style="border-color: var(--card-border); margin: 16px 0;">
+
+                        <div class="mb-3">
+                            <label class="control-label">Simulation Speed</label>
+                            <select id="speedSelect" class="dark-select">
+                                <option value="1">Real-time (1x)</option>
+                                <option value="10">Fast (10x)</option>
+                                <option value="60" selected>1 min / sec (60x)</option>
+                                <option value="300">5 min / sec (300x)</option>
+                                <option value="1800">30 min / sec (1800x)</option>
+                            </select>
+                        </div>
+
+                        <button class="btn-sim mb-2" id="btnStart" onclick="startSimulation()">Start Auto-Simulation</button>
+                        <div class="d-flex gap-2">
+                            <button class="btn-sim btn-stop" id="btnStop" onclick="stopSimulation()" style="display:none;">Pause</button>
+                            <button class="btn-sim btn-reset" onclick="resetSimulation()">Reset</button>
+                        </div>
+
+                        <hr style="border-color: var(--card-border); margin: 16px 0;">
+                        <div style="font-size:0.7rem; color: var(--text-2);">
+                            <div class="mb-1"><span class="sim-dot" id="simDot"></span> <span id="simLabel">Simulation Idle</span></div>
+                            <div>Clock: <strong id="simClock" style="color:var(--text-1);">08:00:00</strong></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Center: Gauge -->
+            <div class="col-lg-5">
+                <div class="dark-card h-100">
+                    <div class="dark-card-header">Thermal Core &mdash; Temperature Gauge</div>
+                    <div class="dark-card-body gauge-container">
+                        <svg class="gauge-svg" viewBox="0 0 300 220">
+                            <defs>
+                                <filter id="glow">
+                                    <feGaussianBlur stdDeviation="4" result="blur"/>
+                                    <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                                </filter>
+                            </defs>
+                            <!-- Background Arc -->
+                            <circle cx="150" cy="120" r="100"
+                                fill="none" stroke="#21262d" stroke-width="18"
+                                stroke-dasharray="471.24 628.32"
+                                transform="rotate(135 150 120)"
+                                stroke-linecap="round"/>
+                            <!-- Value Arc -->
+                            <circle id="gaugeArc" cx="150" cy="120" r="100"
+                                fill="none" stroke="#f59e0b" stroke-width="18"
+                                stroke-dasharray="0 628.32"
+                                transform="rotate(135 150 120)"
+                                stroke-linecap="round"
+                                filter="url(#glow)"
+                                style="transition: stroke-dasharray 0.3s ease, stroke 0.3s ease;"/>
+                            <!-- Scale Labels -->
+                            <text x="38" y="205" class="gauge-scale" text-anchor="middle">0&deg;</text>
+                            <text x="150" y="14" class="gauge-scale" text-anchor="middle">400&deg;</text>
+                            <text x="262" y="205" class="gauge-scale" text-anchor="middle">800&deg;</text>
+                            <!-- Center Text -->
+                            <text id="gaugeTemp" x="150" y="108" text-anchor="middle" class="gauge-value">25.0</text>
+                            <text x="150" y="130" text-anchor="middle" class="gauge-unit">&deg;C</text>
+                            <text id="gaugeStatusText" x="150" y="158" text-anchor="middle" class="gauge-status" fill="#8b949e">IDLE</text>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: 24hr Landscape + Carbon -->
+            <div class="col-lg-4">
+                <div class="dark-card mb-3">
+                    <div class="dark-card-header">24-Hour Energy Landscape</div>
+                    <div class="dark-card-body" style="padding:12px;">
+                        <canvas id="landscapeChart" height="195"></canvas>
+                    </div>
+                </div>
+                <div class="dark-card">
+                    <div class="dark-card-body" style="padding:12px 16px;">
+                        <div class="carbon-indicator" id="carbonIndicator">
+                            <div class="carbon-dot"></div>
+                            <div>
+                                <div class="carbon-label">Carbon Footprint</div>
+                                <div class="carbon-value" id="carbonValue">LOW</div>
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-between mt-2" style="font-size:0.7rem; color:var(--text-2);">
+                            <span>Heater: 1500W / 220V</span>
+                            <span>Sand Mass: 15 kg</span>
+                            <span>Cp: 830 J/(kg&middot;K)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Temperature & Energy History Chart ───────────────── -->
+        <div class="row g-3 mb-3">
+            <div class="col-12">
+                <div class="dark-card">
+                    <div class="dark-card-header">Temperature &amp; Energy History</div>
+                    <div class="dark-card-body" style="padding: 12px;">
+                        <canvas id="historyChart" height="110"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── JSON API Output ──────────────────────────────────── -->
+        <div class="row g-3">
+            <div class="col-12">
+                <div class="dark-card">
+                    <div class="dark-card-header">JSON API Output &mdash; Dashboard-Parseable</div>
+                    <div class="dark-card-body" style="padding: 12px;">
+                        <div class="json-output" id="jsonOutput">{
+  "timestamp": "08:00:00",
+  "system_status": "IDLE",
+  "temperature_c": 25.0,
+  "energy_stored_kj": 0.00,
+  "grid_price_mode": "OFF-PEAK",
+  "renewable_availability": "HIGH",
+  "ai_recommendation": "Awaiting simulation input...",
+  "safety_alert": "NORMAL"
+}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── JavaScript: ThermaSand Intelligent Core Engine ────────── -->
+<script>
+// ============================================================
+// CONSTANTS
+// ============================================================
+const MASS = 15;          // kg
+const CP = 830;           // J/(kg*K)
+const AMBIENT = 25;       // C
+const MAX_GAUGE = 800;    // Gauge max
+const HEATER_POWER = 1500; // Watts
+const CHARGE_RATE = HEATER_POWER / (MASS * CP); // ~0.12 C/s
+const DISCHARGE_RATE = -0.15;  // C/s
+const STORAGE_LOSS = -0.005;   // C/s
+const CIRC = 2 * Math.PI * 100;       // 628.32
+const ARC_LEN = CIRC * (270 / 360);   // 471.24
+
+// ============================================================
+// STATE
+// ============================================================
+let simRunning = false;
+let simInterval = null;
+let simTime = new Date();
+let simTemp = 25;
+let prevTemp = 25;
+let currentAction = 'STORAGE';
+let history = [];
+const MAX_HISTORY = 300;
+
+// ============================================================
+// CORE ENGINE: computeState()
+// ============================================================
+function computeState(temp, time, prev, dt) {
+    const energyJ = MASS * CP * Math.max(0, temp - AMBIENT);
+    const energyKJ = energyJ / 1000;
+
+    // State inference
+    let status = 'STORAGE';
+    if (dt > 0) {
+        const rate = (temp - prev) / dt;
+        if (rate > 0.2) status = 'CHARGING';
+        else if (rate < -0.2) status = 'DISCHARGING';
+    }
+
+    const h = time.getHours();
+    const m = time.getMinutes();
+    const s = time.getSeconds();
+    const ts = pad(h) + ':' + pad(m) + ':' + pad(s);
+
+    // Grid pricing
+    const isPeak = h >= 17 && h < 22;
+    const gridMode = isPeak ? 'PEAK' : 'OFF-PEAK';
+
+    // Renewables
+    const isSolar = h >= 8 && h < 18;
+    const isWind = h >= 22 || h < 5;
+    const renewAvail = (isSolar || isWind) ? 'HIGH' : 'LOW';
+
+    // Solar intensity (0-1)
+    let solarI = 0;
+    if (isSolar) solarI = Math.sin(((h + m / 60 - 8) / 10) * Math.PI);
+
+    // Wind intensity (0-1)
+    let windI = 0;
+    if (h >= 22) windI = 0.6 + 0.2 * Math.sin(((h - 22) / 7) * Math.PI);
+    else if (h < 5) windI = 0.6 + 0.2 * Math.sin(((h + 2) / 7) * Math.PI);
+
+    // AI Recommendation
+    let rec = '';
+    let recType = 'storage';
+    if (!isPeak && temp < 600) {
+        if (isSolar) { rec = 'SOLAR AVAILABLE + OFF-PEAK \u2014 GREEN CHARGE OPTIMAL'; recType = 'charge'; }
+        else if (isWind) { rec = 'WIND AVAILABLE + OFF-PEAK \u2014 INITIATE NIGHT CHARGE'; recType = 'charge'; }
+        else { rec = 'GRID PRICE LOW \u2014 INITIATE CHARGING'; recType = 'charge'; }
+    } else if (isPeak && temp > 300) {
+        rec = 'PEAK PRICING ACTIVE \u2014 DISCHARGE STORED ENERGY (AVOID GRID)';
+        recType = 'discharge';
+    } else if (isPeak && temp <= 300) {
+        rec = 'CRITICAL RESERVE \u2014 INSUFFICIENT THERMAL ENERGY \u2014 DO NOT USE';
+        recType = 'critical';
+    } else if (!isPeak && temp >= 600) {
+        rec = 'THERMAL CAPACITY NEAR MAX \u2014 MAINTAIN STORAGE';
+        recType = 'storage';
+    }
+
+    // Carbon footprint
+    let carbon = 'LOW';
+    if (status === 'CHARGING') {
+        if (isSolar || isWind) carbon = 'LOW';
+        else if (isPeak) carbon = 'HIGH';
+        else carbon = 'MEDIUM';
+    }
+
+    // Safety
+    let safety = 'NORMAL';
+    if (temp > 800) safety = 'CRITICAL';
+    else if (temp > 650) safety = 'WARNING';
+
+    return {
+        timestamp: ts,
+        system_status: status,
+        temperature_c: Math.round(temp * 10) / 10,
+        energy_stored_kj: Math.round(energyKJ * 100) / 100,
+        grid_price_mode: gridMode,
+        renewable_availability: renewAvail,
+        ai_recommendation: rec,
+        safety_alert: safety,
+        _carbon: carbon,
+        _recType: recType,
+        _solarI: solarI,
+        _windI: windI,
+        _isPeak: isPeak,
+        _hour: h + m / 60
+    };
+}
+
+function pad(n) { return String(n).padStart(2, '0'); }
+
+// ============================================================
+// GAUGE RENDERING
+// ============================================================
+function updateGauge(temp, status) {
+    const pct = Math.min(1, Math.max(0, temp / MAX_GAUGE));
+    const fill = ARC_LEN * pct;
+    const arc = document.getElementById('gaugeArc');
+    arc.setAttribute('stroke-dasharray', fill + ' ' + CIRC);
+    arc.setAttribute('stroke', getGaugeColor(temp));
+
+    document.getElementById('gaugeTemp').textContent = temp.toFixed(1);
+
+    const st = document.getElementById('gaugeStatusText');
+    st.textContent = status;
+    if (status === 'CHARGING') { st.setAttribute('fill', '#f59e0b'); }
+    else if (status === 'DISCHARGING') { st.setAttribute('fill', '#3b82f6'); }
+    else if (status === 'STORAGE') { st.setAttribute('fill', '#10b981'); }
+    else { st.setAttribute('fill', '#8b949e'); }
+}
+
+function getGaugeColor(t) {
+    if (t < 150) return '#3b82f6';
+    if (t < 350) return '#10b981';
+    if (t < 550) return '#f59e0b';
+    if (t < 700) return '#f97316';
+    return '#ef4444';
+}
+
+// ============================================================
+// KPI UPDATES
+// ============================================================
+function updateKPIs(st) {
+    // Status
+    setKPI('kpiStatus', 'kpiStatusCard', st.system_status,
+        st.system_status === 'CHARGING' ? 'charge' :
+        st.system_status === 'DISCHARGING' ? 'discharge' : 'storage');
+
+    // Temperature
+    setKPI('kpiTemp', 'kpiTempCard', st.temperature_c.toFixed(1) + '\u00B0C',
+        st.temperature_c > 650 ? 'critical' : st.temperature_c > 400 ? 'charge' : 'storage');
+
+    // Energy
+    const ekj = st.energy_stored_kj;
+    const eStr = ekj >= 1000 ? (ekj / 1000).toFixed(2) + ' MJ' : ekj.toFixed(1) + ' kJ';
+    setKPI('kpiEnergy', 'kpiEnergyCard', eStr, 'charge');
+
+    // Grid
+    setKPI('kpiGrid', 'kpiGridCard', st.grid_price_mode,
+        st.grid_price_mode === 'PEAK' ? 'peak' : 'offpeak');
+
+    // Renewable
+    setKPI('kpiRenew', 'kpiRenewCard', st.renewable_availability,
+        st.renewable_availability === 'HIGH' ? 'high' : 'low');
+
+    // Safety
+    setKPI('kpiSafety', 'kpiSafetyCard', st.safety_alert,
+        st.safety_alert.toLowerCase());
+}
+
+function setKPI(valId, cardId, text, cls) {
+    const el = document.getElementById(valId);
+    el.textContent = text;
+    el.className = 'kpi-value ' + cls;
+    const card = document.getElementById(cardId);
+    card.className = 'kpi-card status-' + cls;
+}
+
+// ============================================================
+// RECOMMENDATION BANNER
+// ============================================================
+function updateRecommendation(st) {
+    const banner = document.getElementById('recBanner');
+    banner.className = 'rec-banner rec-' + st._recType;
+    document.getElementById('recText').textContent = st.ai_recommendation || 'Awaiting input...';
+}
+
+// ============================================================
+// CARBON INDICATOR
+// ============================================================
+function updateCarbon(st) {
+    const el = document.getElementById('carbonIndicator');
+    el.className = 'carbon-indicator' +
+        (st._carbon === 'HIGH' ? ' carbon-high' : st._carbon === 'MEDIUM' ? ' carbon-medium' : '');
+    document.getElementById('carbonValue').textContent = st._carbon;
+}
+
+// ============================================================
+// JSON OUTPUT (Syntax-Highlighted)
+// ============================================================
+function updateJSON(st) {
+    const obj = {
+        timestamp: st.timestamp,
+        system_status: st.system_status,
+        temperature_c: st.temperature_c,
+        energy_stored_kj: st.energy_stored_kj,
+        grid_price_mode: st.grid_price_mode,
+        renewable_availability: st.renewable_availability,
+        ai_recommendation: st.ai_recommendation,
+        safety_alert: st.safety_alert
+    };
+    const raw = JSON.stringify(obj, null, 2);
+    document.getElementById('jsonOutput').innerHTML = syntaxHL(raw);
+}
+
+function syntaxHL(json) {
+    json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    return json.replace(
+        /("(\\u[\da-fA-F]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g,
+        function (match) {
+            let cls = 'json-number';
+            if (/^"/.test(match)) {
+                cls = /:$/.test(match) ? 'json-key' : 'json-string';
+            } else if (/true|false/.test(match)) { cls = 'json-bool'; }
+            return '<span class="' + cls + '">' + match + '</span>';
+        }
+    );
+}
+
+// ============================================================
+// CHARTS
+// ============================================================
+let historyChart, landscapeChart;
+
+function initCharts() {
+    // -- History Chart (Temperature + Energy) --
+    const hCtx = document.getElementById('historyChart').getContext('2d');
+    historyChart = new Chart(hCtx, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [
+                {
+                    label: 'Temperature (\u00B0C)',
+                    data: [],
+                    borderColor: '#f59e0b',
+                    backgroundColor: 'rgba(245,158,11,0.08)',
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 0,
+                    borderWidth: 2,
+                    yAxisID: 'yTemp'
+                },
+                {
+                    label: 'Energy Stored (kJ)',
+                    data: [],
+                    borderColor: '#10b981',
+                    backgroundColor: 'rgba(16,185,129,0.06)',
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 0,
+                    borderWidth: 2,
+                    yAxisID: 'yEnergy'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            animation: { duration: 0 },
+            interaction: { mode: 'index', intersect: false },
+            plugins: { legend: { labels: { color: '#8b949e', boxWidth: 12, font: { size: 11 } } } },
+            scales: {
+                x: { ticks: { color: '#8b949e', maxTicksLimit: 12, font: { size: 10 } }, grid: { color: '#21262d' } },
+                yTemp: {
+                    type: 'linear', position: 'left', min: 0, max: 850,
+                    title: { display: true, text: '\u00B0C', color: '#f59e0b', font: { size: 11 } },
+                    ticks: { color: '#f59e0b', font: { size: 10 } },
+                    grid: { color: '#21262d' }
+                },
+                yEnergy: {
+                    type: 'linear', position: 'right', min: 0,
+                    title: { display: true, text: 'kJ', color: '#10b981', font: { size: 11 } },
+                    ticks: { color: '#10b981', font: { size: 10 } },
+                    grid: { drawOnChartArea: false }
+                }
+            }
+        }
+    });
+
+    // -- 24hr Energy Landscape --
+    const lCtx = document.getElementById('landscapeChart').getContext('2d');
+    const hours = Array.from({ length: 24 }, (_, i) => pad(i) + ':00');
+    const solarData = Array.from({ length: 24 }, (_, i) => {
+        if (i < 8 || i >= 18) return 0;
+        return Math.sin(((i - 8) / 10) * Math.PI) * 100;
+    });
+    const windData = Array.from({ length: 24 }, (_, i) => {
+        if (i >= 22 || i < 5) return 65;
+        return 3;
+    });
+    const peakData = Array.from({ length: 24 }, (_, i) => (i >= 17 && i < 22) ? 100 : 0);
+
+    landscapeChart = new Chart(lCtx, {
+        type: 'bar',
+        data: {
+            labels: hours,
+            datasets: [
+                {
+                    label: 'Solar',
+                    data: solarData,
+                    backgroundColor: 'rgba(251,191,36,0.5)',
+                    borderColor: '#fbbf24',
+                    borderWidth: 1,
+                    borderRadius: 2,
+                    order: 2
+                },
+                {
+                    label: 'Wind',
+                    data: windData,
+                    backgroundColor: 'rgba(6,182,212,0.4)',
+                    borderColor: '#06b6d4',
+                    borderWidth: 1,
+                    borderRadius: 2,
+                    order: 3
+                },
+                {
+                    label: 'Peak Grid',
+                    data: peakData,
+                    backgroundColor: 'rgba(239,68,68,0.15)',
+                    borderColor: 'rgba(239,68,68,0.5)',
+                    borderWidth: 1,
+                    borderRadius: 2,
+                    order: 1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            animation: { duration: 0 },
+            plugins: { legend: { labels: { color: '#8b949e', boxWidth: 10, font: { size: 10 } } } },
+            scales: {
+                x: { ticks: { color: '#8b949e', maxTicksLimit: 12, font: { size: 9 } }, grid: { color: '#21262d' } },
+                y: { display: false, max: 110 }
+            }
+        }
+    });
+}
+
+function updateHistoryChart() {
+    const labels = history.map(h => h.timestamp);
+    const temps = history.map(h => h.temperature_c);
+    const energies = history.map(h => h.energy_stored_kj);
+
+    historyChart.data.labels = labels;
+    historyChart.data.datasets[0].data = temps;
+    historyChart.data.datasets[1].data = energies;
+
+    // Dynamic max for energy axis
+    const maxE = Math.max(100, ...energies);
+    historyChart.options.scales.yEnergy.max = Math.ceil(maxE / 500) * 500;
+
+    historyChart.update();
+}
+
+function highlightLandscapeHour(hour) {
+    // Color current hour bar differently
+    const bgColors = Array.from({ length: 24 }, (_, i) => {
+        if (Math.floor(hour) === i) return 'rgba(255,255,255,0.15)';
+        if (i >= 17 && i < 22) return 'rgba(239,68,68,0.15)';
+        return 'rgba(239,68,68,0)';
+    });
+    landscapeChart.data.datasets[2].backgroundColor = bgColors;
+    landscapeChart.update();
+}
+
+// ============================================================
+// SIMULATION CONTROL
+// ============================================================
+function startSimulation() {
+    if (simRunning) return;
+    simRunning = true;
+
+    // Read initial values
+    const parts = document.getElementById('timeInput').value.split(':');
+    simTemp = parseFloat(document.getElementById('tempInput').value) || 25;
+    prevTemp = simTemp;
+    simTime = new Date();
+    simTime.setHours(parseInt(parts[0]) || 8, parseInt(parts[1]) || 0, 0, 0);
+
+    document.getElementById('btnStart').style.display = 'none';
+    document.getElementById('btnStop').style.display = 'block';
+    document.getElementById('simBadge').textContent = 'LIVE';
+    document.getElementById('simBadge').className = 'header-badge badge-live';
+    document.getElementById('simDot').classList.add('running');
+    document.getElementById('simLabel').textContent = 'Simulation Running';
+
+    simInterval = setInterval(simulationTick, 100);
+}
+
+function stopSimulation() {
+    simRunning = false;
+    clearInterval(simInterval);
+    document.getElementById('btnStart').style.display = 'block';
+    document.getElementById('btnStart').textContent = 'Resume';
+    document.getElementById('btnStop').style.display = 'none';
+    document.getElementById('simBadge').textContent = 'PAUSED';
+    document.getElementById('simDot').classList.remove('running');
+    document.getElementById('simLabel').textContent = 'Simulation Paused';
+}
+
+function resetSimulation() {
+    stopSimulation();
+    simTemp = 25;
+    prevTemp = 25;
+    currentAction = 'STORAGE';
+    history = [];
+    simTime = new Date();
+    simTime.setHours(8, 0, 0, 0);
+
+    document.getElementById('timeInput').value = '08:00';
+    document.getElementById('tempInput').value = '25';
+    document.getElementById('tempSlider').value = '25';
+    document.getElementById('tempDisplay').textContent = '25.0\u00B0C';
+    document.getElementById('btnStart').textContent = 'Start Auto-Simulation';
+    document.getElementById('simBadge').textContent = 'STANDBY';
+    document.getElementById('simClock').textContent = '08:00:00';
+
+    updateGauge(25, 'IDLE');
+    updateHistoryChart();
+
+    const idle = computeState(25, simTime, 25, 0);
+    updateKPIs(idle);
+    updateRecommendation(idle);
+    updateCarbon(idle);
+    updateJSON(idle);
+    highlightLandscapeHour(8);
+}
+
+function simulationTick() {
+    const speed = parseInt(document.getElementById('speedSelect').value) || 60;
+    const dt = speed * 0.1; // simulated seconds per tick
+
+    prevTemp = simTemp;
+
+    // Apply temperature change based on current action
+    switch (currentAction) {
+        case 'CHARGING':
+            simTemp += CHARGE_RATE * dt;
+            break;
+        case 'DISCHARGING':
+            simTemp += DISCHARGE_RATE * dt;
+            break;
+        default:
+            simTemp += STORAGE_LOSS * dt;
+    }
+    simTemp = Math.max(AMBIENT, Math.min(850, simTemp));
+
+    // Advance simulated clock
+    simTime = new Date(simTime.getTime() + dt * 1000);
+
+    // Compute full state
+    const state = computeState(simTemp, simTime, prevTemp, dt);
+
+    // In simulation mode, the controller knows the relay state —
+    // override inferred status with the actual heater/blower action.
+    state.system_status = currentAction;
+
+    // Determine action for NEXT tick from AI recommendation
+    if (state.safety_alert === 'CRITICAL') {
+        // SAFETY OVERRIDE: Emergency cutoff above 800°C — force storage
+        currentAction = 'STORAGE';
+        state.ai_recommendation = 'SAFETY CUTOFF \u2014 HEATER DISABLED \u2014 TEMPERATURE EXCEEDS SAFE LIMIT';
+        state._recType = 'critical';
+    } else if (state.ai_recommendation.includes('CHARGE')) {
+        currentAction = 'CHARGING';
+    } else if (state.ai_recommendation.includes('DISCHARGE')) {
+        currentAction = 'DISCHARGING';
+    } else {
+        currentAction = 'STORAGE';
+    }
+
+    // Update all displays
+    updateGauge(state.temperature_c, state.system_status);
+    updateKPIs(state);
+    updateRecommendation(state);
+    updateCarbon(state);
+    updateJSON(state);
+    highlightLandscapeHour(state._hour);
+
+    document.getElementById('simClock').textContent = state.timestamp;
+    document.getElementById('tempSlider').value = simTemp;
+    document.getElementById('tempInput').value = simTemp.toFixed(1);
+    document.getElementById('tempDisplay').textContent = simTemp.toFixed(1) + '\u00B0C';
+
+    // Record history (throttle: max one point per 200ms real time)
+    const now = Date.now();
+    if (!simulationTick._lastRecord || now - simulationTick._lastRecord > 200) {
+        simulationTick._lastRecord = now;
+        history.push({
+            timestamp: state.timestamp,
+            temperature_c: state.temperature_c,
+            energy_stored_kj: state.energy_stored_kj
+        });
+        if (history.length > MAX_HISTORY) history.shift();
+        updateHistoryChart();
+    }
+}
+
+// ============================================================
+// MANUAL INPUT HANDLERS
+// ============================================================
+function manualUpdate() {
+    if (simRunning) return;
+    const t = parseFloat(document.getElementById('tempInput').value) || 25;
+    const parts = document.getElementById('timeInput').value.split(':');
+    const time = new Date();
+    time.setHours(parseInt(parts[0]) || 8, parseInt(parts[1]) || 0, 0, 0);
+
+    const state = computeState(t, time, prevTemp, 1);
+    prevTemp = t;
+
+    updateGauge(state.temperature_c, state.system_status);
+    updateKPIs(state);
+    updateRecommendation(state);
+    updateCarbon(state);
+    updateJSON(state);
+    highlightLandscapeHour(state._hour);
+    document.getElementById('simClock').textContent = state.timestamp;
+}
+
+document.getElementById('tempSlider').addEventListener('input', function () {
+    document.getElementById('tempInput').value = this.value;
+    document.getElementById('tempDisplay').textContent = parseFloat(this.value).toFixed(1) + '\u00B0C';
+    manualUpdate();
+});
+document.getElementById('tempInput').addEventListener('input', function () {
+    document.getElementById('tempSlider').value = this.value;
+    document.getElementById('tempDisplay').textContent = parseFloat(this.value).toFixed(1) + '\u00B0C';
+    manualUpdate();
+});
+document.getElementById('timeInput').addEventListener('input', manualUpdate);
+
+// ============================================================
+// INITIALIZATION
+// ============================================================
+initCharts();
+manualUpdate();
+</script>
+{% endblock %}

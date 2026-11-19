@@ -1,0 +1,354 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="sand-bg hero-section">
+    <div class="container">
+        <h1 class="display-4 fw-bold">Industrial Heat. Decarbonized.</h1>
+        <p class="lead">ThermaSand bridges the gap between intermittent renewable energy and continuous industrial demand using locally sourced sand.</p>
+        <a href="/simulate" class="btn btn-lg btn-warning mt-3">Run the Feasibility AI ></a>
+    </div>
+</div>
+
+<div class="container my-5">
+    <div class="row text-center">
+        <div class="col-md-4 mb-4">
+            <div class="p-3">
+                <div class="feature-icon mb-3">🔋</div>
+                <h3>Frugal Storage Core</h3>
+                <p>Using high-silica sand heated up to 600°C, providing a 10x lower cost base than chemical batteries without relying on rare-earth imports.</p>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="p-3">
+                <div class="feature-icon mb-3">🧠</div>
+                <h3>AI-Driven Dispatch</h3>
+                <p>Our ESP32 controller monitors grid tariffs, charging when energy is cheapest (off-peak/solar) and discharging when industrial value is highest.</p>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="p-3">
+                <div class="feature-icon mb-3">🏭</div>
+                <h3>Industrial Grade</h3>
+                <p>Modular design delivers clean, high-temperature air suitable for drying processes, pre-heating boilers, and other intensive applications.</p>
+            </div>
+        </div>
+    </div>
+
+    <hr class="my-5">
+
+    <div class="row align-items-center">
+        <div class="col-md-6">
+            <h2>How It Works</h2>
+            <p class="lead">Turning electricity into heat, storing it in sand, and delivering it on demand.</p>
+            <ul>
+               <li><strong>Charge:</strong> Excess grid or solar electricity powers a central resistive heater.</li>
+               <li><strong>Store:</strong> 5L of sand (prototype scale) is insulated with high-density Rock Wool, holding heat for hours.</li>
+               <li><strong>Discharge:</strong> A blower fan forces air through a copper serpentine coil submerged in the hot sand, providing hot air output.</li>
+            </ul>
+        </div>
+        <div class="col-md-6 text-center">
+             <img src="https://via.placeholder.com/500x300?text=ThermaSand+System+Diagram" alt="System Diagram" class="img-fluid rounded shadow">
+             </div>
+    </div>
+
+    <hr class="my-5">
+
+    <div class="row">
+        <div class="col-lg-12">
+            <h2>The Economic Edge: Arbitrage in the Moroccan Grid</h2>
+            <p class="lead">Morocco’s Time-of-Use tariff structure is the primary "fuel" behind ThermaSand’s ROI.</p>
+            <ul>
+                <li><strong>The "Heure de Pointe" factor:</strong> Moroccan factories and hotels face heavy surcharges during peak evening hours.</li>
+                <li><strong>The AI advantage:</strong> ThermaSand identifies "Heure Creuse" (often 11 PM to 7 AM) to charge the sand at the lowest rates.</li>
+                <li><strong>Cost displacement:</strong> Discharging stored heat during the day avoids expensive peak-hour electricity or imported butane/propane.</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-lg-7 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header">Morocco TOU Tariff Snapshot (Illustrative)</div>
+                <div class="card-body">
+                    <canvas id="touChart" height="180"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-5 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header">Arbitrage Data Highlights</div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6 mb-3">
+                            <h3 id="touSpread">-</h3>
+                            <small class="text-muted">Peak - Off-Peak (MAD/kWh)</small>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <h3 id="touRatio">-</h3>
+                            <small class="text-muted">Peak / Off-Peak Ratio</small>
+                        </div>
+                        <div class="col-12">
+                            <h4 id="estimatedSavings">-</h4>
+                            <small class="text-muted">Estimated Savings vs. Peak Charging</small>
+                        </div>
+                    </div>
+                    <p class="small text-muted mt-3 mb-0">Values shown are indicative and used to communicate the business case.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <hr class="my-5">
+
+    <div class="row">
+        <div class="col-lg-12">
+            <h2>Industry-Specific Benefits: Morocco’s Core Sectors</h2>
+            <div class="row mt-3">
+                <div class="col-md-4 mb-4">
+                    <div class="p-3 border rounded h-100">
+                        <h4>Agri-Food & Textiles</h4>
+                        <p>Factories in Agadir (canning) or Casablanca (textiles) need high volumes of process heat for drying and sterilization.</p>
+                        <ul>
+                            <li><strong>Fossil fuel replacement:</strong> Switch from Fuel Oil N°2 or gas to an electric thermal battery powered by Morocco’s growing wind and solar share.</li>
+                            <li><strong>Frugal maintenance:</strong> Mechanical systems (blowers, coils) are serviceable by Moroccan industrial teams.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <div class="p-3 border rounded h-100">
+                        <h4>Hospitality Sector</h4>
+                        <p>Hotels and resorts require massive hot water volumes for showers, kitchens, and heated pools.</p>
+                        <ul>
+                            <li><strong>Lithium vs. sand:</strong> Sand is inert and fireproof, avoiding thermal runaway risks in basements.</li>
+                            <li><strong>Thermal heart:</strong> A large sand vault provides safe, centralized hot water storage.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <div class="p-3 border rounded h-100">
+                        <h4>Public Infrastructure</h4>
+                        <p>Hospitals and universities require dependable 24/7 heat for sterilization, laundry, and services.</p>
+                        <ul>
+                            <li><strong>Continuous reliability:</strong> A charged thermal buffer smooths grid fluctuations and ensures heat availability.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <hr class="my-5">
+
+    <div class="row">
+        <div class="col-lg-12">
+            <h2>Sand vs. Lithium: The Moroccan "Sovereignty" Argument</h2>
+            <p class="lead">Material origin and resilience matter for national competitiveness and resilience.</p>
+            <div class="table-responsive">
+                <table class="table table-bordered align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Feature</th>
+                            <th>Lithium-Ion (Foreign Tech)</th>
+                            <th>ThermaSand (Moroccan Tech)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Material Origin</td>
+                            <td>Imported (China/Global)</td>
+                            <td>Local (Moroccan Sahara/Coastal Sand)</td>
+                        </tr>
+                        <tr>
+                            <td>Currency Impact</td>
+                            <td>Drains foreign reserves (devises)</td>
+                            <td>Supports local economy (MAD)</td>
+                        </tr>
+                        <tr>
+                            <td>Climate Resilience</td>
+                            <td>Performance drops in 40°C+ heat</td>
+                            <td>Built for heat (operates at 600°C+)</td>
+                        </tr>
+                        <tr>
+                            <td>Safety</td>
+                            <td>High fire risk in dry climates</td>
+                            <td>Zero risk; intrinsically safe</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-lg-12">
+            <div class="card shadow-sm">
+                <div class="card-header">Sovereignty & Resilience Scores (Relative)</div>
+                <div class="card-body">
+                    <canvas id="sovereigntyChart" height="140"></canvas>
+                    <p class="small text-muted mt-2 mb-0">Scores reflect relative strength for Moroccan context.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <hr class="my-5">
+
+    <div class="row">
+        <div class="col-lg-12">
+            <h2>Decarbonization & "Green Label" Exports</h2>
+            <p>Morocco is positioning itself as a "Green Bridge" to Europe, and exporting industries will increasingly be judged by their carbon footprint.</p>
+            <ul>
+                <li><strong>CBAM impact:</strong> Moroccan exports to Europe will be taxed based on embedded emissions.</li>
+                <li><strong>ThermaSand’s role:</strong> The AI proves heat is derived from stored renewable energy, helping avoid carbon penalties.</li>
+            </ul>
+        </div>
+    </div>
+
+    <hr class="my-5">
+
+    <div class="row">
+        <div class="col-lg-12">
+            <h2>Summary Comparison for the Moroccan Context</h2>
+            <div class="table-responsive">
+                <table class="table table-bordered align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Requirement</th>
+                            <th>Traditional Solution (Boiler/Grid)</th>
+                            <th>Lithium Battery</th>
+                            <th>ThermaSand M-TES</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Initial Cost (CAPEX)</td>
+                            <td>Medium</td>
+                            <td>Extremely High</td>
+                            <td>Low (Frugal)</td>
+                        </tr>
+                        <tr>
+                            <td>Running Cost (OPEX)</td>
+                            <td>High (Volatile Gas Prices)</td>
+                            <td>Low</td>
+                            <td>Lowest (Energy Arbitrage)</td>
+                        </tr>
+                        <tr>
+                            <td>Life Span</td>
+                            <td>10-15 Years</td>
+                            <td>7-10 Years</td>
+                            <td>25+ Years</td>
+                        </tr>
+                        <tr>
+                            <td>Safety</td>
+                            <td>Fire/Leakage Risk</td>
+                            <td>High Explosion Risk</td>
+                            <td>Extremely Safe</td>
+                        </tr>
+                        <tr>
+                            <td>Eco-Friendliness</td>
+                            <td>Low (CO2 Emissions)</td>
+                            <td>Medium (Mining impact)</td>
+                            <td>High (Natural materials)</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="card shadow-sm mt-4">
+                <div class="card-header">Technology Comparison (Relative Score)</div>
+                <div class="card-body">
+                    <canvas id="comparisonChart" height="200"></canvas>
+                    <p class="small text-muted mt-2 mb-0">Relative scores combine CAPEX, OPEX, lifespan, safety, and eco impact.</p>
+                </div>
+            </div>
+            <div class="alert alert-warning mt-4">
+                <strong>Pitch script:</strong> I can add a Moroccan industrial audience pitch script with concrete savings in MAD if you want it included on this page.
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const offPeak = 0.80;
+    const shoulder = 1.10;
+    const peak = 1.60;
+
+    const spread = peak - offPeak;
+    const ratio = peak / offPeak;
+    const savingsPct = ((peak - offPeak) / peak) * 100;
+
+    document.getElementById('touSpread').innerText = spread.toFixed(2);
+    document.getElementById('touRatio').innerText = ratio.toFixed(1) + "x";
+    document.getElementById('estimatedSavings').innerText = savingsPct.toFixed(0) + "% lower cost";
+
+    const touChart = new Chart(document.getElementById('touChart').getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: ['Heure Creuse', 'Heure Normale', 'Heure de Pointe'],
+            datasets: [{
+                label: 'MAD/kWh',
+                data: [offPeak, shoulder, peak],
+                backgroundColor: ['#2ecc71', '#f1c40f', '#e74c3c']
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: { y: { beginAtZero: true, title: { display: true, text: 'MAD/kWh' } } }
+        }
+    });
+
+    const sovereigntyChart = new Chart(document.getElementById('sovereigntyChart').getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: ['Local Content', 'Currency Impact', 'Heat Resilience', 'Safety'],
+            datasets: [
+                {
+                    label: 'Lithium-Ion',
+                    data: [1, 1, 2, 2],
+                    backgroundColor: 'rgba(231, 76, 60, 0.7)'
+                },
+                {
+                    label: 'ThermaSand',
+                    data: [5, 5, 5, 5],
+                    backgroundColor: 'rgba(39, 174, 96, 0.7)'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            indexAxis: 'y',
+            scales: { x: { beginAtZero: true, max: 5, title: { display: true, text: 'Relative Score (1-5)' } } }
+        }
+    });
+
+    const comparisonChart = new Chart(document.getElementById('comparisonChart').getContext('2d'), {
+        type: 'radar',
+        data: {
+            labels: ['CAPEX', 'OPEX', 'Lifespan', 'Safety', 'Eco'],
+            datasets: [
+                {
+                    label: 'Traditional Boiler/Grid',
+                    data: [3, 2, 3, 2, 1],
+                    backgroundColor: 'rgba(127, 140, 141, 0.2)',
+                    borderColor: '#7f8c8d'
+                },
+                {
+                    label: 'Lithium Battery',
+                    data: [1, 4, 2, 1, 3],
+                    backgroundColor: 'rgba(241, 196, 15, 0.2)',
+                    borderColor: '#f1c40f'
+                },
+                {
+                    label: 'ThermaSand M-TES',
+                    data: [5, 5, 5, 5, 5],
+                    backgroundColor: 'rgba(46, 204, 113, 0.2)',
+                    borderColor: '#2ecc71'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            scales: { r: { beginAtZero: true, max: 5 } }
+        }
+    });
+</script>
+{% endblock %}

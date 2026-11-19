@@ -1,0 +1,214 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row">
+        <div class="col-lg-4 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-warning text-dark fw-bold">
+                    ⚙️ Define Your Industrial Scenario
+                </div>
+                <div class="card-body bg-light">
+                    <form id="simulationForm">
+                        <h6 class="text-muted mb-3">Current System Baseline</h6>
+                        <div class="mb-3">
+                            <label class="form-label small">Current Fuel Cost equivalent (MAD/kWh th)</label>
+                            <input type="number" step="0.1" class="form-control" id="currentFuelCost" value="1.2">
+                            <div class="form-text">E.g., Cost of gas converted to thermal kWh units.</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small">Current Boiler Efficiency (%)</label>
+                            <input type="range" class="form-range" id="currentEfficiency" min="50" max="95" value="75" oninput="effVal.innerText = this.value">
+                            <div class="text-end small"><span id="effVal">75</span>%</div>
+                        </div>
+
+                        <hr>
+                        <h6 class="text-muted mb-3">Operational Demand</h6>
+                        <div class="mb-3">
+                            <label class="form-label small">Required Thermal Load (kW)</label>
+                            <input type="number" class="form-control" id="thermalLoad" value="50">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small">Hours of Operation per Day</label>
+                            <input type="number" class="form-control" id="operationalHours" min="1" max="24" value="10">
+                        </div>
+
+                        <button type="submit" class="btn btn-dark w-100 mt-3" id="calculateBtn">Run AI Feasibility Engine</button>
+                    </form>
+                </div>
+            </div>
+             <div class="card shadow-sm mt-3 d-none" id="summaryBox">
+                <div class="card-body text-center">
+                    <h5 class="card-title text-success">ThermaSand Impact</h5>
+                    <div class="row mt-3">
+                        <div class="col-6">
+                            <h3 id="resPayback">-</h3>
+                            <small class="text-muted">Year Payback</small>
+                        </div>
+                        <div class="col-6">
+                            <h3 id="resCo2">-</h3>
+                            <small class="text-muted">Tons CO2 Saved (10yr)</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card shadow-sm mt-3 d-none" id="comparisonBox">
+                <div class="card-body">
+                    <h6 class="text-muted mb-3">Traditional vs ThermaSand (Annual)</h6>
+                    <div class="row text-center">
+                        <div class="col-6 mb-3">
+                            <div class="small text-muted">Traditional Cost</div>
+                            <div class="h4" id="resAnnualBaseline">-</div>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <div class="small text-muted">ThermaSand Cost</div>
+                            <div class="h4 text-success" id="resAnnualThermasand">-</div>
+                        </div>
+                        <div class="col-6">
+                            <div class="small text-muted">Annual Savings</div>
+                            <div class="h4 text-success" id="resAnnualSavings">-</div>
+                        </div>
+                        <div class="col-6">
+                            <div class="small text-muted">Savings Rate</div>
+                            <div class="h4 text-success" id="resSavingsPct">-</div>
+                        </div>
+                        <div class="col-12 mt-2">
+                            <div class="small text-muted">Total 10-Year Savings</div>
+                            <div class="h5" id="resTotalSavings">-</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    📈 Traditional vs ThermaSand (10-Year Total Cost)
+                </div>
+                <div class="card-body">
+                    <canvas id="cumulativeChart" height="250"></canvas>
+                </div>
+            </div>
+
+             <div class="card shadow-sm">
+                <div class="card-header">
+                    💰 Traditional vs ThermaSand (Average Monthly OPEX)
+                </div>
+                <div class="card-body">
+                    <canvas id="monthlyChart" height="150"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let cumulativeChartCtx = document.getElementById('cumulativeChart').getContext('2d');
+    let monthlyChartCtx = document.getElementById('monthlyChart').getContext('2d');
+    let cumulativeChart, monthlyChart;
+
+    document.getElementById('simulationForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const btn = document.getElementById('calculateBtn');
+        btn.innerText = "Processing AI Simulation...";
+        btn.disabled = true;
+
+        // Gather data
+        const formData = {
+            currentFuelCost: document.getElementById('currentFuelCost').value,
+            currentEfficiency: document.getElementById('currentEfficiency').value,
+            thermalLoad: document.getElementById('thermalLoad').value,
+            operationalHours: document.getElementById('operationalHours').value
+        };
+
+        // Send to Flask Backend
+        fetch('/api/calculate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(formData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            updateCharts(data);
+            updateSummary(data);
+            btn.innerText = "Run AI Feasibility Engine";
+            btn.disabled = false;
+            document.getElementById('summaryBox').classList.remove('d-none');
+            document.getElementById('comparisonBox').classList.remove('d-none');
+        });
+    });
+
+    function updateSummary(data) {
+        document.getElementById('resPayback').innerText = data.paybackYears + " Yrs";
+        // Add color based on payback time
+        document.getElementById('resPayback').className = data.paybackYears < 5 ? 'text-success' : 'text-warning';
+        document.getElementById('resCo2').innerText = data.co2Saved;
+        document.getElementById('resAnnualBaseline').innerText = data.annualBaseline.toLocaleString() + " MAD";
+        document.getElementById('resAnnualThermasand').innerText = data.annualThermasand.toLocaleString() + " MAD";
+        document.getElementById('resAnnualSavings').innerText = data.annualSavings.toLocaleString() + " MAD";
+        document.getElementById('resSavingsPct').innerText = data.savingsPct + "%";
+        document.getElementById('resTotalSavings').innerText = data.totalSavings10y.toLocaleString() + " MAD";
+    }
+
+    function updateCharts(data) {
+        // --- Chart 1: Cumulative Line Chart ---
+        if (cumulativeChart) cumulativeChart.destroy();
+        cumulativeChart = new Chart(cumulativeChartCtx, {
+            type: 'line',
+            data: {
+                labels: data.years.map(y => 'Year ' + y),
+                datasets: [
+                    {
+                        label: 'Traditional (Cumulative Cost)',
+                        data: data.baselineCumulative,
+                        borderColor: '#e74c3c', // Red
+                        backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    },
+                    {
+                        label: 'ThermaSand (Cumulative Cost)',
+                        data: data.thermasandCumulative,
+                        borderColor: '#27ae60', // Green
+                        backgroundColor: 'rgba(39, 174, 96, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                scales: { y: { beginAtZero: true, title: {display: true, text: 'Total Cost (MAD)'} } }
+            }
+        });
+
+        // --- Chart 2: Monthly Bar Chart ---
+        if (monthlyChart) monthlyChart.destroy();
+        monthlyChart = new Chart(monthlyChartCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Average Monthly Bill'],
+                datasets: [
+                    {
+                        label: 'Traditional',
+                        data: [data.monthlyBaseline],
+                        backgroundColor: '#c0392b',
+                    },
+                    {
+                        label: 'ThermaSand (Off-Peak Charging)',
+                        data: [data.monthlyThermasand],
+                        backgroundColor: '#2ecc71',
+                    }
+                ]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                scales: { x: { beginAtZero: true, title: {display: true, text: 'Cost (MAD)'} } }
+            }
+        });
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,221 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h2 class="mb-1">ThermaSand Admin Dashboard</h2>
+            <p class="text-muted mb-0">
+                Live temperature from ESP32 MAX6675 thermocouple.
+                PSI is set manually below.
+                <br>
+                <strong>For the full real-time dashboard run:</strong>
+                <code>streamlit run dashboard.py</code>
+            </p>
+        </div>
+        <div class="text-end">
+            <div class="badge bg-secondary" id="statusBadge">Waiting for data...</div>
+            <div class="small text-muted" id="lastUpdate">Last update: -</div>
+        </div>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-4 col-lg-3">
+            <div class="card shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="text-muted small">Temperature</div>
+                    <div class="display-6" id="tempValue">--</div>
+                    <div class="text-muted">&deg;C</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-lg-3">
+            <div class="card shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="text-muted small">PSI (Manual)</div>
+                    <div class="display-6" id="psiValue">--</div>
+                    <div class="text-muted">psi</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-lg-3">
+            <div class="card shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="text-muted small">Readings</div>
+                    <div class="display-6" id="readingsCount">0</div>
+                    <div class="text-muted">total</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-lg-3">
+            <div class="card shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="text-muted small">Device</div>
+                    <div class="h5 mt-2" id="deviceId">--</div>
+                    <div class="text-muted">ESP32</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Chart -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">Temperature &amp; PSI Trends</div>
+                <div class="card-body">
+                    <canvas id="tempChart" height="260"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Manual PSI Control -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">Set PSI (Manual)</div>
+                <div class="card-body">
+                    <p class="text-muted small">
+                        The blower PSI is not read from the ESP32.
+                        Set it manually here.
+                    </p>
+                    <div class="mb-3">
+                        <label class="form-label small">PSI Value</label>
+                        <input type="number" class="form-control" id="psiInput"
+                               value="0" min="0" max="50" step="0.1">
+                    </div>
+                    <button class="btn btn-dark w-100" id="applyPsiBtn">Apply PSI</button>
+                    <div id="psiStatus" class="small text-success mt-2" style="display:none;">
+                        PSI updated!
+                    </div>
+                </div>
+            </div>
+            <div class="alert alert-info small">
+                <strong>How it works:</strong><br>
+                The ESP32 sends temperature readings to the Streamlit dashboard
+                via USB Serial. This page shows data from the Flask API.<br><br>
+                <strong>Streamlit dashboard:</strong><br>
+                <code>streamlit run dashboard.py</code>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let tempChart;
+
+    function initChart() {
+        const ctx = document.getElementById('tempChart').getContext('2d');
+        tempChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [
+                    {
+                        label: 'Temperature (°C)',
+                        data: [],
+                        borderColor: '#e67e22',
+                        backgroundColor: 'rgba(230,126,34,0.1)',
+                        tension: 0.3,
+                        fill: true
+                    },
+                    {
+                        label: 'PSI (manual)',
+                        data: [],
+                        borderColor: '#3498db',
+                        backgroundColor: 'rgba(52,152,219,0.1)',
+                        tension: 0.3,
+                        fill: true,
+                        yAxisID: 'yPsi'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                interaction: { mode: 'index', intersect: false },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 900,
+                        title: { display: true, text: '°C' },
+                        position: 'left'
+                    },
+                    yPsi: {
+                        beginAtZero: true,
+                        title: { display: true, text: 'PSI' },
+                        position: 'right',
+                        grid: { drawOnChartArea: false }
+                    }
+                }
+            }
+        });
+    }
+
+    function updateChart(history) {
+        if (!history || history.length === 0) return;
+        const labels = history.map(p => p.timestamp);
+        tempChart.data.labels = labels;
+        tempChart.data.datasets[0].data = history.map(p => p.temperatureC);
+        tempChart.data.datasets[1].data = history.map(p => p.psi);
+        tempChart.update();
+    }
+
+    function fetchTelemetry() {
+        fetch('/api/telemetry')
+            .then(r => r.json())
+            .then(data => {
+                const t = data.latest;
+                const history = data.history || [];
+
+                // Update KPI cards
+                if (t.temperatureC !== null) {
+                    document.getElementById('tempValue').innerText = t.temperatureC.toFixed(1);
+                    document.getElementById('statusBadge').className = 'badge bg-success';
+                    document.getElementById('statusBadge').innerText = 'Receiving Data';
+                } else {
+                    document.getElementById('tempValue').innerText = '--';
+                    document.getElementById('statusBadge').className = 'badge bg-secondary';
+                    document.getElementById('statusBadge').innerText = 'Waiting for data...';
+                }
+
+                document.getElementById('psiValue').innerText =
+                    t.psi !== null ? t.psi.toFixed(1) : '--';
+                document.getElementById('readingsCount').innerText = history.length;
+                document.getElementById('deviceId').innerText = t.deviceId || '--';
+                document.getElementById('lastUpdate').innerText =
+                    t.timestamp ? 'Last update: ' + t.timestamp : 'Last update: -';
+
+                // Sync PSI input with current server value
+                document.getElementById('psiInput').value = t.psi || 0;
+
+                // Update chart
+                updateChart(history);
+            })
+            .catch(err => {
+                document.getElementById('statusBadge').className = 'badge bg-danger';
+                document.getElementById('statusBadge').innerText = 'API Error';
+            });
+    }
+
+    // Apply PSI button
+    document.getElementById('applyPsiBtn').addEventListener('click', () => {
+        const psi = Number(document.getElementById('psiInput').value);
+        fetch('/api/psi', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ psi: psi })
+        })
+        .then(r => r.json())
+        .then(() => {
+            const status = document.getElementById('psiStatus');
+            status.style.display = 'block';
+            setTimeout(() => { status.style.display = 'none'; }, 2000);
+            fetchTelemetry();
+        });
+    });
+
+    initChart();
+    fetchTelemetry();
+    setInterval(fetchTelemetry, 3000);
+</script>
+{% endblock %}
